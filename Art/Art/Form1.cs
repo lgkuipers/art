@@ -51,6 +51,23 @@ namespace Art
 
     }
 
+    public static class Circle
+    {
+        public static List<Point> createPolyline(double x, double y, double size)
+        {
+            int step = 20;
+            List<Point> circle = new List<Point>();
+            for (int i = 0; i < step; i++)
+            {
+                double r = size;
+                double t = (double)i / (step - 1);
+                double angle = Math.PI * 2 * t;
+                circle.Add(new Point(x + Math.Cos(angle) * r, y + Math.Sin(angle) * r));
+            }
+            return circle;
+        }
+
+    }
 
     public partial class Form1 : Form
     {
@@ -207,7 +224,10 @@ namespace Art
                     {
                         polyline_c.Add(b_new);
                         List<Point> lp = new List<Point>(polyline_c);
-                        result.Add(lp);
+                        if (lp.Count() > 1) // ignore 1 point
+                        {
+                            result.Add(lp);
+                        }
                         polyline_c.Clear();
                     }
                 }
@@ -219,7 +239,7 @@ namespace Art
                 polyline_c.Add(b_new);
             }
 
-            if (polyline_c.Count != 0)
+            if (polyline_c.Count > 1) // ignore 1 point
             {
                 result.Add(polyline_c);
             }
@@ -282,16 +302,10 @@ namespace Art
         }
         public void CreateDrawing2(Graphics g, Size dimensions, Point[] box, float scale)
         {
-            var cx = dimensions.width / 2;
-            var cy = dimensions.height / 2;
-
             int steps = 7;
             int count = 20;
             double spacing = 1; // cm
             double radius = 2; // cm
-
-            //count = 1;
-            //radius = 21 * spacing;
 
             spacing *= scale;
             radius *= scale;
@@ -310,6 +324,28 @@ namespace Art
                       dimensions.height / 2 + Math.Sin(angle) * r));
                 }
                 lines.Add(circle);
+            }
+
+            lines = clipPolylinesToBox(lines, box);
+
+            lines.ForEach(p => DrawPath(g, p));
+        }
+
+        static Random random = new Random();
+
+        public double randomDouble(double from, double to)
+        {
+            return random.NextDouble() * (to - from) + from;
+        }
+        public void CreateDrawing3(Graphics g, Size dimensions, Point[] box, float scale)
+        {
+            List<List<Point>> lines = new List<List<Point>>();
+
+            List<Point> circle = new List<Point>();
+            for (int i = 0; i < 200; i++)
+            {
+                List<Point> new_circle = Circle.createPolyline(randomDouble(box[0].x, box[1].x), randomDouble(box[0].y, box[1].y), 0.3 * scale /* cm */ );
+                lines.Add(new_circle);
             }
 
             lines = clipPolylinesToBox(lines, box);
@@ -338,7 +374,7 @@ namespace Art
             lGraphic.FillRectangle(Brushes.AliceBlue, 0, 0, (int) dimensions.width, (int) dimensions.height);
             lGraphic.DrawRectangle(Pens.Blue, (int) box[0].x, (int) box[0].y, (int) (box[1].x - box[0].x), (int) (box[1].y - box[0].y));
 
-            CreateDrawing1(lGraphic, dimensions, box, scale);
+            CreateDrawing2(lGraphic, dimensions, box, scale);
 
             ivPbImage.Image = newImage;
         }
