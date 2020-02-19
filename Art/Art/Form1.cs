@@ -10,67 +10,11 @@ using System.Windows.Forms;
 
 namespace Art
 {
-    public class Size
-    {
-        public double width { get; set; }
-        public double height { get; set; }
-    }
-    public class Point
-    {
-        public double x { get; set; }
-        public double y { get; set; }
-
-        public Point(double aX, double aY)
-        {
-            x = aX;
-            y = aY;
-        }
-
-        public static bool operator==(Point a, Point b)
-        {
-            return ((a.x == b.x) && (a.y == b.y));
-        }
-        public static bool operator !=(Point a, Point b)
-        {
-            return ((a.x != b.x) || (a.y != b.y));
-        }
-    }
-    public static class Square
-    {
-        public static List<Point> createPolyline(double x, double y, double size)
-        {
-            List<Point> path = new List<Point>() {
-                new Point( x - size, y - size ),
-                new Point( x + size, y - size ),
-                new Point( x + size, y + size ),
-                new Point( x - size, y + size ),
-                new Point( x - size, y - size )
-            };
-            return path;
-        }
-
-    }
-
-    public static class Circle
-    {
-        public static List<Point> createPolyline(double x, double y, double size)
-        {
-            int step = 20;
-            List<Point> circle = new List<Point>();
-            for (int i = 0; i < step; i++)
-            {
-                double r = size;
-                double t = (double)i / (step - 1);
-                double angle = Math.PI * 2 * t;
-                circle.Add(new Point(x + Math.Cos(angle) * r, y + Math.Sin(angle) * r));
-            }
-            return circle;
-        }
-
-    }
-
     public partial class Form1 : Form
     {
+        private DelaunayTriangulator delaunay = new DelaunayTriangulator();
+        private Voronoi voronoi = new Voronoi();
+
         public Form1()
         {
             InitializeComponent();
@@ -83,7 +27,7 @@ namespace Art
         const int TOP = 8; // 1000 
 
 
-        int computeCode(double x, double y, Point[] box)
+        int computeCode(double x, double y, Point2[] box)
         {
             // initialized as being inside 
             int code = INSIDE;
@@ -104,7 +48,7 @@ namespace Art
         // Clipping a line from P1 = (x2, y2) to P2 = (x2, y2) 
         bool cohenSutherlandClip(ref double x1, ref double y1,
                                 ref double x2, ref double y2,
-                                Point[] box)
+                                Point2[] box)
         {
             // Compute region codes for P1, P2 
             int code1 = computeCode(x1, y1, box);
@@ -191,18 +135,18 @@ namespace Art
         }
 
 
-        public List<List<Point>> clipPolylineToBox(List<Point> polyline, Point[] box)
+        public List<List<Point2>> clipPolylineToBox(List<Point2> polyline, Point2[] box)
         {
-            List<List<Point>> result = new List<List<Point>>();
+            List<List<Point2>> result = new List<List<Point2>>();
 
-            var polyline_a = polyline.ToArray<Point>();
+            var polyline_a = polyline.ToArray<Point2>();
             int n = polyline_a.Length;
 
-            var polyline_c = new List<Point>();
+            var polyline_c = new List<Point2>();
 
             int i = 0;
             var a = polyline_a[i];
-            Point b_new = polyline_a[i + 1];
+            Point2 b_new = polyline_a[i + 1];
             bool new_b = false;
             while (i < (n-1))
             {
@@ -213,8 +157,8 @@ namespace Art
                 double x2 = b.x;
                 double y2 = b.y;
                 bool r = cohenSutherlandClip(ref x1, ref y1, ref x2, ref y2, box);
-                var a_new = new Point(x1, y1);
-                b_new = new Point(x2, y2);
+                var a_new = new Point2(x1, y1);
+                b_new = new Point2(x2, y2);
                 bool new_a = a != a_new;
                 new_b = b != b_new;
                 if (r)
@@ -223,7 +167,7 @@ namespace Art
                     if (new_b)
                     {
                         polyline_c.Add(b_new);
-                        List<Point> lp = new List<Point>(polyline_c);
+                        List<Point2> lp = new List<Point2>(polyline_c);
                         if (lp.Count() > 1) // ignore 1 point
                         {
                             result.Add(lp);
@@ -247,13 +191,13 @@ namespace Art
             return result;
         }
 
-        public List<List<Point>> clipPolylinesToBox(List<List<Point>> lines, Point[] box)
+        public List<List<Point2>> clipPolylinesToBox(List<List<Point2>> lines, Point2[] box)
         {
-            List<List<Point>> result = new List<List<Point>>();
+            List<List<Point2>> result = new List<List<Point2>>();
 
             foreach (var l in lines)
             {
-                List<List<Point>> r = clipPolylineToBox(l, box);
+                List<List<Point2>> r = clipPolylineToBox(l, box);
                 if (r.Count() > 0)
                 {
                     result.AddRange(r);
@@ -264,7 +208,7 @@ namespace Art
         }
 
 
-        public void DrawPath(Graphics g, List<Point> p)
+        public void DrawPath(Graphics g, List<Point2> p)
         {
             Pen pen = new Pen(Color.Red);
             PointF[] pfa = new PointF[p.Count];
@@ -279,12 +223,12 @@ namespace Art
             g.DrawLines(pen, pfa);
         }
 
-        public void CreateDrawing1(Graphics g, Size dimensions, Point[] box, float scale)
+        public void CreateDrawing1(Graphics g, Size dimensions, Point2[] box, float scale)
         {
             var cx = dimensions.width / 2;
             var cy = dimensions.height / 2;
 
-            List<List<Point>> lines = new List<List<Point>>();
+            List<List<Point2>> lines = new List<List<Point2>>();
 
             for (int i = 0; i<15; i++)
             {
@@ -300,7 +244,7 @@ namespace Art
 
             lines.ForEach(p => DrawPath(g,p));
         }
-        public void CreateDrawing2(Graphics g, Size dimensions, Point[] box, float scale)
+        public void CreateDrawing2(Graphics g, Size dimensions, Point2[] box, float scale)
         {
             int steps = 7;
             int count = 20;
@@ -310,17 +254,17 @@ namespace Art
             spacing *= scale;
             radius *= scale;
 
-            List<List<Point>> lines = new List<List<Point>>();
+            List<List<Point2>> lines = new List<List<Point2>>();
 
             for (int j = 0; j < count; j++)
             {
                 double r = radius + j * spacing;
-                List<Point> circle = new List<Point>();
+                List<Point2> circle = new List<Point2>();
                 for (int i = 0; i < steps; i++)
                 {
                     double t = (double) i / Math.Max(1, steps - 1);
                     double angle = Math.PI * 2 * t;
-                    circle.Add( new Point(dimensions.width / 2 + Math.Cos(angle) * r,
+                    circle.Add( new Point2(dimensions.width / 2 + Math.Cos(angle) * r,
                       dimensions.height / 2 + Math.Sin(angle) * r));
                 }
                 lines.Add(circle);
@@ -337,16 +281,45 @@ namespace Art
         {
             return random.NextDouble() * (to - from) + from;
         }
-        public void CreateDrawing3(Graphics g, Size dimensions, Point[] box, float scale)
+        public void CreateDrawing3(Graphics g, Size dimensions, Point2[] box, float scale)
         {
-            List<List<Point>> lines = new List<List<Point>>();
+            var points = delaunay.GeneratePoints(3500, box[1].x, box[1].y);
+            var triangulation = delaunay.BowyerWatson(points);
 
-            List<Point> circle = new List<Point>();
+            var voronoiEdges = voronoi.GenerateEdgesFromDelaunay(triangulation);
+
+            List<List<Point2>> lines = new List<List<Point2>>();
+            foreach (var point in points)
+            {
+                List<Point2> new_circle = Circle.createPolyline(point.X, point.Y, 0.2 * scale /* cm */ );
+                //lines.Add(new_circle);
+            }
+            foreach(var triangle in triangulation)
+            {
+                List<Point2> polyline = new List<Point2>();
+                foreach(var point in triangle.Vertices)
+                {
+                    polyline.Add(new Point2(point.X, point.Y));
+                }
+                polyline.Add(new Point2(triangle.Vertices.First().X, triangle.Vertices.First().Y));
+                lines.Add(polyline);
+            }
+            foreach(var edge in voronoiEdges)
+            {
+                List<Point2> polyline = new List<Point2>();
+                polyline.Add(new Point2(edge.Point1.X, edge.Point1.Y));
+                polyline.Add(new Point2(edge.Point2.X, edge.Point2.Y));
+                //lines.Add(polyline);
+            }
+
+            /*
+            List<Point2> circle = new List<Point2>();
             for (int i = 0; i < 200; i++)
             {
-                List<Point> new_circle = Circle.createPolyline(randomDouble(box[0].x, box[1].x), randomDouble(box[0].y, box[1].y), 0.3 * scale /* cm */ );
+                List<Point2> new_circle = Circle.createPolyline(randomDouble(box[0].x, box[1].x), randomDouble(box[0].y, box[1].y), 0.3 * scale );
                 lines.Add(new_circle);
             }
+            */
 
             lines = clipPolylinesToBox(lines, box);
 
@@ -361,10 +334,10 @@ namespace Art
 
             Size dimensions = new Size { width = lImageWidth, height = lImageHeight };
 
-            double margin = 1.5; // cm
+            double margin = 0; // cm
             margin *= scale;
 
-            Point[] box = { new Point(margin, margin), new Point(dimensions.width - margin, dimensions.height - margin) };
+            Point2[] box = { new Point2(margin, margin), new Point2(dimensions.width - margin-1, dimensions.height - margin-1) };
 
 
             var newImage = new Bitmap(lImageWidth, lImageHeight);
@@ -374,7 +347,7 @@ namespace Art
             lGraphic.FillRectangle(Brushes.AliceBlue, 0, 0, (int) dimensions.width, (int) dimensions.height);
             lGraphic.DrawRectangle(Pens.Blue, (int) box[0].x, (int) box[0].y, (int) (box[1].x - box[0].x), (int) (box[1].y - box[0].y));
 
-            CreateDrawing2(lGraphic, dimensions, box, scale);
+            CreateDrawing3(lGraphic, dimensions, box, scale);
 
             ivPbImage.Image = newImage;
         }
