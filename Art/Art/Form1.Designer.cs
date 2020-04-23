@@ -35,17 +35,19 @@
             // 
             // ivPbImage
             // 
-            this.ivPbImage.Location = new System.Drawing.Point(44, 74);
+            this.ivPbImage.Location = new System.Drawing.Point(59, 91);
+            this.ivPbImage.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.ivPbImage.Name = "ivPbImage";
-            this.ivPbImage.Size = new System.Drawing.Size(645, 447);
+            this.ivPbImage.Size = new System.Drawing.Size(727, 647);
             this.ivPbImage.TabIndex = 0;
             this.ivPbImage.TabStop = false;
             // 
             // ivBtnDraw
             // 
-            this.ivBtnDraw.Location = new System.Drawing.Point(308, 39);
+            this.ivBtnDraw.Location = new System.Drawing.Point(411, 48);
+            this.ivBtnDraw.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.ivBtnDraw.Name = "ivBtnDraw";
-            this.ivBtnDraw.Size = new System.Drawing.Size(75, 23);
+            this.ivBtnDraw.Size = new System.Drawing.Size(100, 28);
             this.ivBtnDraw.TabIndex = 1;
             this.ivBtnDraw.Text = "Draw";
             this.ivBtnDraw.UseVisualStyleBackColor = true;
@@ -53,11 +55,12 @@
             // 
             // Form1
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 592);
+            this.ClientSize = new System.Drawing.Size(1067, 785);
             this.Controls.Add(this.ivBtnDraw);
             this.Controls.Add(this.ivPbImage);
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "Form1";
             this.Text = "Form1";
             ((System.ComponentModel.ISupportInitialize)(this.ivPbImage)).EndInit();

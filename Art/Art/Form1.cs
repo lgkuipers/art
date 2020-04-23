@@ -222,6 +222,46 @@ namespace Art
 
             g.DrawLines(pen, pfa);
         }
+        int lUp = 100;
+        int lDown = 80;
+        public void OpenCnC(out System.IO.StreamWriter file)
+        {
+            // create new cnc file
+            file = new System.IO.StreamWriter(@"..\..\art.cnc");
+        }
+
+        public void CloseCnc(System.IO.StreamWriter file)
+        {
+            // close cnc file
+            file.Close();
+        }
+        public void PenUpCnc(System.IO.StreamWriter file)
+        {
+            file.WriteLine("M1 {0}", lUp);
+        }
+        public void DrawCnc(Graphics g, List<Point2> p, System.IO.StreamWriter file, float scale)
+        {
+            bool lFirstPoint = true;
+            bool lSecondPoint = true;
+            // draw remaining points
+            foreach (var point in p)
+            {
+                point.x = point.x * 10 / scale;
+                point.y = point.y * 10 / scale;
+                if (lFirstPoint)
+                {
+                    file.WriteLine("M1 {0}", lUp);
+                    lFirstPoint = false;
+                }
+                else if (lSecondPoint)
+                {
+                    file.WriteLine("M1 {0}", lDown);
+                    lSecondPoint = false;
+                }
+                string cmd = string.Format("G0 X{0} Y{1}", point.x.ToString("0.00", new System.Globalization.CultureInfo("en-US")), point.y.ToString("0.00", new System.Globalization.CultureInfo("en-US")));
+                file.WriteLine(cmd);
+            }
+        }
 
         public void CreateDrawing1(Graphics g, Size dimensions, Point2[] box, float scale)
         {
@@ -283,7 +323,7 @@ namespace Art
         }
         public void CreateDrawing3(Graphics g, Size dimensions, Point2[] box, float scale)
         {
-            var points = delaunay.GeneratePoints(3500, box[1].x, box[1].y);
+            var points = delaunay.GeneratePoints(25, box[1].x, box[1].y);
             var triangulation = delaunay.BowyerWatson(points);
 
             var voronoiEdges = voronoi.GenerateEdgesFromDelaunay(triangulation);
@@ -291,8 +331,8 @@ namespace Art
             List<List<Point2>> lines = new List<List<Point2>>();
             foreach (var point in points)
             {
-                List<Point2> new_circle = Circle.createPolyline(point.X, point.Y, 0.2 * scale /* cm */ );
-                //lines.Add(new_circle);
+                List<Point2> new_circle = Circle.createPolyline(point.X, point.Y, 0.1 * scale /* cm */ );
+                lines.Add(new_circle);
             }
             foreach(var triangle in triangulation)
             {
@@ -302,14 +342,14 @@ namespace Art
                     polyline.Add(new Point2(point.X, point.Y));
                 }
                 polyline.Add(new Point2(triangle.Vertices.First().X, triangle.Vertices.First().Y));
-                lines.Add(polyline);
+                //lines.Add(polyline);
             }
             foreach(var edge in voronoiEdges)
             {
                 List<Point2> polyline = new List<Point2>();
                 polyline.Add(new Point2(edge.Point1.X, edge.Point1.Y));
                 polyline.Add(new Point2(edge.Point2.X, edge.Point2.Y));
-                //lines.Add(polyline);
+                lines.Add(polyline);
             }
 
             /*
@@ -324,13 +364,19 @@ namespace Art
             lines = clipPolylinesToBox(lines, box);
 
             lines.ForEach(p => DrawPath(g, p));
+
+            System.IO.StreamWriter file;
+            OpenCnC(out file);
+            lines.ForEach(p => DrawCnc(g, p, file, scale));
+            PenUpCnc(file);
+            CloseCnc(file);
         }
         private void ivBtnDraw_Click(object sender, EventArgs e)
         {
             int lImageWidth = ivPbImage.Size.Width;
             int lImageHeight = ivPbImage.Size.Height;
 
-            float scale = 15;
+            float scale = 45; // cm -> graphics   0.2 cm * scale = units graphics (ivPbImage)
 
             Size dimensions = new Size { width = lImageWidth, height = lImageHeight };
 
