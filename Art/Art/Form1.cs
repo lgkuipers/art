@@ -378,6 +378,9 @@ namespace Art
 
             float scale = 45; // cm -> graphics   0.2 cm * scale = units graphics (ivPbImage)
 
+            lUp = int.Parse(ivTbUp.Text);
+            lDown = int.Parse(ivTbDown.Text);
+
             Size dimensions = new Size { width = lImageWidth, height = lImageHeight };
 
             double margin = 0; // cm
