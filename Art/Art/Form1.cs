@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -222,8 +223,6 @@ namespace Art
 
             g.DrawLines(pen, pfa);
         }
-        int lUp = 100;
-        int lDown = 80;
         public void OpenCnC(out System.IO.StreamWriter file)
         {
             // create new cnc file
@@ -235,11 +234,11 @@ namespace Art
             // close cnc file
             file.Close();
         }
-        public void PenUpCnc(System.IO.StreamWriter file)
+        public void PenUpCnc(System.IO.StreamWriter file, int up)
         {
-            file.WriteLine("M1 {0}", lUp);
+            file.WriteLine("M1 {0}", up);
         }
-        public void DrawCnc(Graphics g, List<Point2> p, System.IO.StreamWriter file, float scale)
+        public void DrawCnc(Graphics g, List<Point2> p, System.IO.StreamWriter file, float scale, int up, int down, double offsetX, double offsetY)
         {
             bool lFirstPoint = true;
             bool lSecondPoint = true;
@@ -248,14 +247,18 @@ namespace Art
             {
                 point.x = point.x * 10 / scale;
                 point.y = point.y * 10 / scale;
+
+                point.x += offsetX;
+                point.y += offsetY;
+
                 if (lFirstPoint)
                 {
-                    file.WriteLine("M1 {0}", lUp);
+                    file.WriteLine("M1 {0}", up);
                     lFirstPoint = false;
                 }
                 else if (lSecondPoint)
                 {
-                    file.WriteLine("M1 {0}", lDown);
+                    file.WriteLine("M1 {0}", down);
                     lSecondPoint = false;
                 }
                 string cmd = string.Format("G0 X{0} Y{1}", point.x.ToString("0.00", new System.Globalization.CultureInfo("en-US")), point.y.ToString("0.00", new System.Globalization.CultureInfo("en-US")));
@@ -321,7 +324,7 @@ namespace Art
         {
             return random.NextDouble() * (to - from) + from;
         }
-        public void CreateDrawing3(Graphics g, Size dimensions, Point2[] box, float scale)
+        public void CreateDrawing3(Graphics g, Size dimensions, Point2[] box, float scale, int up, int down, double offsetX, double offsetY)
         {
             var points = delaunay.GeneratePoints(25, box[1].x, box[1].y);
             var triangulation = delaunay.BowyerWatson(points);
@@ -367,8 +370,8 @@ namespace Art
 
             System.IO.StreamWriter file;
             OpenCnC(out file);
-            lines.ForEach(p => DrawCnc(g, p, file, scale));
-            PenUpCnc(file);
+            lines.ForEach(p => DrawCnc(g, p, file, scale, up, down, offsetX, offsetY));
+            PenUpCnc(file, up);
             CloseCnc(file);
         }
         private void ivBtnDraw_Click(object sender, EventArgs e)
@@ -377,9 +380,13 @@ namespace Art
             int lImageHeight = ivPbImage.Size.Height;
 
             float scale = 45; // cm -> graphics   0.2 cm * scale = units graphics (ivPbImage)
+                              // width 545 height 526   12 cm 11,5 cm
 
-            lUp = int.Parse(ivTbUp.Text);
-            lDown = int.Parse(ivTbDown.Text);
+            var lUp = int.Parse(ivTbUp.Text);
+            var lDown = int.Parse(ivTbDown.Text);
+
+            var lOffsetX = double.Parse(ivTbOffsetX.Text, new CultureInfo("en-US"));
+            var lOffsetY = double.Parse(ivTbOffsetY.Text, new CultureInfo("en-US"));
 
             Size dimensions = new Size { width = lImageWidth, height = lImageHeight };
 
@@ -396,7 +403,7 @@ namespace Art
             lGraphic.FillRectangle(Brushes.AliceBlue, 0, 0, (int) dimensions.width, (int) dimensions.height);
             lGraphic.DrawRectangle(Pens.Blue, (int) box[0].x, (int) box[0].y, (int) (box[1].x - box[0].x), (int) (box[1].y - box[0].y));
 
-            CreateDrawing3(lGraphic, dimensions, box, scale);
+            CreateDrawing3(lGraphic, dimensions, box, scale, lUp, lDown, lOffsetX, lOffsetY);
 
             ivPbImage.Image = newImage;
         }
